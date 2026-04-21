@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultimate Flagship Watermark</title>
+    <style>
+        :root { --primary: #000; --bg: #f2f2f7; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #1d1d1f; }
+        .container { max-width: 650px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.08); }
+        h2 { text-align: center; font-weight: 800; margin-bottom: 5px; font-size: 24px; }
+        p.subtitle { text-align: center; color: #86868b; margin-top: 0; margin-bottom: 25px; font-size: 14px; }
+        .input-group { margin-bottom: 20px; }
+        label { display: block; font-size: 13px; font-weight: 700; color: #555; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select { width: 100%; padding: 14px; border: 1.5px solid #e5e5ea; border-radius: 12px; font-size: 16px; box-sizing: border-box; outline: none; transition: all 0.3s ease; background: #fafafa; }
+        input:focus, select:focus { border-color: var(--primary); background: #fff; }
+        .row { display: flex; gap: 15px; }
+        .row > div { flex: 1; }
+        button { width: 100%; padding: 16px; background: #111; color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 20px; transition: transform 0.1s, opacity 0.3s; }
+        button:active { transform: scale(0.98); opacity: 0.8; }
+        #downloadBtn { background: #007aff; display: none; }
+        canvas { display: none; }
+        .preview-area { margin-top: 30px; text-align: center; }
+        #resultImage { max-width: 100%; border-radius: 8px; box-shadow: 0 5px 20px rgba(0,0,0,0.15); display: none; margin: 0 auto; }
+        .hint { font-size: 13px; color: #ff3b30; font-weight: 600; margin-top: 15px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Pro Watermark Engine</h2>
+    <p class="subtitle">v3.0 - Leica Fix & New Brands</p>
+    
+    <div class="input-group">
+        <label>1. Pilih Foto Utama</label>
+        <input type="file" id="imageInput" accept="image/*">
+    </div>
+
+    <div class="row">
+        <div class="input-group">
+            <label>2. Merek HP</label>
+            <select id="brand">
+                <option value="Xiaomi">Xiaomi (Leica)</option>
+                <option value="vivo">vivo (ZEISS)</option>
+                <option value="OPPO">OPPO (Hasselblad)</option>
+                <option value="OnePlus">OnePlus (Hasselblad)</option>
+                <option value="HUAWEI">HUAWEI (XMAGE)</option>
+                <option value="HONOR">HONOR (Matrix)</option>
+                <option value="ROG">ROG (Republic of Gamers)</option>
+                <option value="REDMAGIC">REDMAGIC</option>
+                <option value="Google">Google (Pixel)</option>
+                <option value="SAMSUNG">SAMSUNG</option>
+                <option value="iPhone">iPhone</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <label>3. Seri / Model</label>
+            <input type="text" id="model" placeholder="Contoh: 14 Ultra / 9 Pro">
+        </div>
+    </div>
+
+    <button id="generateBtn">Render Watermark HD</button>
+    
+    <div class="preview-area">
+        <canvas id="mainCanvas"></canvas>
+        <img id="resultImage" alt="Hasil Watermark">
+        <p class="hint" id="saveHint">↓ Tekan lama gambar di atas, lalu pilih "Simpan Gambar" ↓</p>
+        <button id="downloadBtn">Download via Browser</button>
+    </div>
+</div>
+
+<script>
+    const imageInput = document.getElementById('imageInput');
+    const generateBtn = document.getElementById('generateBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const resultImage = document.getElementById('resultImage');
+    const saveHint = document.getElementById('saveHint');
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let imgData = null;
+
+    imageInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            imgData = new Image();
+            imgData.onload = () => { 
+                generateBtn.innerText = "Render Watermark HD"; 
+                generateBtn.style.background = "#111";
+            };
+            imgData.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    };
+
+    generateBtn.onclick = () => {
+        if (!imgData) {
+            alert("Harap masukkan foto terlebih dahulu!");
+            return;
+        }
+        
+        const brand = document.getElementById('brand').value;
+        const model = document.getElementById('model').value || "Flagship Series";
+        
+        // Setup Dimensi
+        const w = imgData.width;
+        const h = imgData.height;
+        const barH = Math.round(h * 0.14); // 14% dari tinggi
+        
+        canvas.width = w;
+        canvas.height = h + barH;
+
+        // Gambar Background Putih
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Gambar Foto Asli
+        ctx.drawImage(imgData, 0, 0);
+
+        // --- PENGATURAN TIPOGRAFI DASAR ---
+        const padding = w * 0.04;
+        const centerY = h + (barH / 2);
+        const fontSizeBig = Math.max(barH * 0.22, 20);
+        const fontSizeSmall = fontSizeBig * 0.65;
+
+        // --- BAGIAN KIRI: BRAND & MODEL HP ---
+        ctx.textBaseline = "middle";
+        ctx.textAlign = "left";
+        
+        // Teks Brand Kiri
+        ctx.fillStyle = "#111111";
+        ctx.font = `bold ${fontSizeBig}px sans-serif`;
+        
+        let displayBrand = brand.toUpperCase();
+        if(brand === "OnePlus") displayBrand = "ONEPLUS";
+        if(brand === "iPhone") displayBrand = "Apple"; // Biasanya iPhone pakai logo, kita pakai teks rapi
+
+        ctx.fillText(displayBrand, padding, centerY - (fontSizeBig * 0.45));
+        
+        // Teks Model HP
+        ctx.fillStyle = "#666666";
+        ctx.font = `500 ${fontSizeSmall}px sans-serif`;
+        ctx.fillText(model, padding, centerY + (fontSizeSmall * 0.9));
+
+
+        // --- BAGIAN KANAN: LOGO PARTNER & EXIF ---
+        ctx.textAlign = "right";
+        let logoOffset = 0; // Jarak untuk teks EXIF di sebelah logo
+
+        // Logika Render Logo Berdasarkan Merek
+        if (brand === "Xiaomi") {
+            // FIX LEICA: Lingkaran & Posisi Teks Lebih Presisi
+            const radius = fontSizeBig * 0.9;
+            const lx = w - padding - radius;
+            
+            // Lingkaran Merah
+            ctx.fillStyle = "#e30613";
+            ctx.beginPath();
+            ctx.arc(lx, centerY, radius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Teks Leica (Tengah Lingkaran)
+            ctx.fillStyle = "white";
+            ctx.font = `italic bold ${fontSizeBig * 0.65}px "Times New Roman", serif`;
+            ctx.textAlign = "center";
+            // Ditambah sedikit offset Y agar font serif benar-benar berada di tengah visual lingkaran
+            ctx.fillText("Leica", lx, centerY + (radius * 0.15)); 
+            
+            logoOffset = (radius * 2) + 20;
+        } 
+        else if (brand === "vivo") {
+            // ZEISS LOGO
+            const zw = fontSizeBig * 2.8;
+            const zh = fontSizeBig * 1.15;
+            const zx = w - padding - zw;
+            const zy = centerY - (zh / 2);
+            
+            ctx.fillStyle = "#005bb8"; 
+            // Bikin ujung kotak Zeiss sedikit tumpul
+            ctx.roundRect ? ctx.roundRect(zx, zy, zw, zh, 4) : ctx.fillRect(zx, zy, zw, zh);
+            ctx.fill();
+            
+            ctx.fillStyle = "white";
+            ctx.font = `italic bold ${fontSizeBig * 0.8}px serif`;
+            ctx.textAlign = "center";
+            ctx.fillText("ZEISS", zx + (zw/2), centerY + (zh * 0.05));
+            logoOffset = zw + 20;
+        } 
+        else if (brand === "OPPO" || brand === "OnePlus") {
+            // HASSELBLAD LOGO
+            ctx.fillStyle = "#111111";
+            ctx.font = `bold ${fontSizeBig * 0.8}px sans-serif`;
+            ctx.fillText("HASSELBLAD", w - padding, centerY);
+            logoOffset = ctx.measureText("HASSELBLAD").width + 20;
+        }
+        else if (brand === "HUAWEI") {
+            // XMAGE LOGO
+            ctx.fillStyle = "#111111";
+            ctx.font = `900 ${fontSizeBig * 0.85}px "Arial Black", sans-serif`;
+            ctx.fillText("XMAGE", w - padding, centerY);
+            logoOffset = ctx.measureText("XMAGE").width + 20;
+        }
+        else if (brand === "HONOR") {
+            // MATRIX CAMERA
+            ctx.fillStyle = "#cc0000"; // Accent color Honor
+            ctx.font = `bold ${fontSizeBig * 0.8}px sans-serif`;
+            ctx.fillText("MATRIX", w - padding, centerY);
+            logoOffset = ctx.measureText("MATRIX").width + 20;
+        }
+        else if (brand === "ROG") {
+            // REPUBLIC OF GAMERS
+            ctx.fillStyle = "#ff0033"; // ROG Red
+            ctx.font = `bold italic ${fontSizeBig * 0.85}px sans-serif`;
+            ctx.fillText("REPUBLIC OF GAMERS", w - padding, centerY);
+            logoOffset = ctx.measureText("REPUBLIC OF GAMERS").width + 20;
+        }
+        else if (brand === "REDMAGIC") {
+            // REDMAGIC LOGO
+            ctx.fillStyle = "#111111";
+            ctx.font = `900 italic ${fontSizeBig * 0.9}px sans-serif`;
+            const rmText = "REDMAGIC";
+            ctx.fillText(rmText, w - padding, centerY);
+            
+            // Tambahkan titik/aksen merah di sebelah REDMAGIC
+            const txtWidth = ctx.measureText(rmText).width;
+            ctx.fillStyle = "#ff0000";
+            ctx.fillRect(w - padding - txtWidth - (fontSizeBig*0.4), centerY - (fontSizeBig*0.4), fontSizeBig*0.25, fontSizeBig*0.8);
+            
+            logoOffset = txtWidth + (fontSizeBig*0.8) + 20;
+        }
+        else if (brand === "Google") {
+            // PIXEL LOGO
+            ctx.fillStyle = "#4285f4"; // Google Blue
+            ctx.font = `bold ${fontSizeBig * 0.9}px sans-serif`;
+            ctx.fillText("G", w - padding, centerY);
+            logoOffset = ctx.measureText("G").width + 20;
+        }
+
+        // --- TEKS EXIF & TANGGAL (Di Sebelah Kiri Logo) ---
+        ctx.textAlign = "right";
+        ctx.fillStyle = "#888888";
+        ctx.font = `500 ${fontSizeSmall}px monospace`;
+        
+        // Bikin Fake EXIF biar estetik layaknya pro kamera
+        const date = new Date().toLocaleDateString('id-ID', {year:'numeric', month:'2-digit', day:'2-digit'}).replace(/\//g, '.');
+        const exifList = ["23mm f/1.8 1/100s ISO-100", "24mm f/1.4 1/250s ISO-50", "35mm f/2.0 1/125s ISO-200"];
+        const randomExif = exifList[Math.floor(Math.random() * exifList.length)]; // Pilih Exif acak biar natural
+        
+        ctx.fillText(`${date}  |  ${randomExif}`, w - padding - (logoOffset > 0 ? logoOffset : 0), centerY);
+
+        // --- RENDER KE IMAGE ---
+        const finalImage = canvas.toDataURL("image/jpeg", 0.95);
+        resultImage.src = finalImage;
+        
+        // Tampilkan UI
+        resultImage.style.display = "block";
+        downloadBtn.style.display = "block";
+        saveHint.style.display = "block";
+        
+        // Efek Tombol Selesai
+        generateBtn.innerText = "Berhasil! Render Ulang?";
+        generateBtn.style.background = "#28a745";
+        
+        // Auto-scroll pelan ke hasil
+        setTimeout(() => resultImage.scrollIntoView({ behavior: 'smooth' }), 100);
+    };
+
+    // Tombol Download Manual
+    downloadBtn.onclick = () => {
+        const link = document.createElement('a');
+        link.download = `ShotOn_${document.getElementById('brand').value}.jpg`;
+        link.href = resultImage.src;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+</script>
+
+</body>
+</html>
